@@ -6,7 +6,7 @@ Check that every truck stop in the price file can be placed on the map, and fill
 
 A truck stop the loader cannot place is a price the planner can never pick, so the goal is a
 report with nothing in it. The price file names a city and state but gives no coordinates, so
-coverage depends on html/cities.js plus city-supplement.json.
+coverage depends on us-cities.csv plus city-supplement.json.
 
 `--geocode-missing` asks Nominatim for each unplaced city, one request per second as its usage
 policy requires, and keeps an answer only when the province or state it comes back with is the

@@ -7,9 +7,9 @@ Fill the City and FuelStation tables from the project's data files. Used by:
 Sources:
     fuel-prices-for-be-assessment.csv   the supplied price list: this is the authority on
                                         which truck stops exist and what they charge
-    html/cities.js                      US cities with coordinates, used both to geocode
+    us-cities.csv                       US cities with coordinates, used both to geocode
                                         "City, ST" input and to place the truck stops
-    city-supplement.json                the few city names the price list uses that cities.js
+    city-supplement.json                the city names the price list uses that us-cities.csv
                                         does not have, so no priced truck stop is dropped
 
 The price file has no coordinates, only a city and state, so every station is placed at its
@@ -32,7 +32,7 @@ from django.conf import settings
 from .services.geocoding import normalize
 
 BASE_DIR = Path(settings.BASE_DIR)
-DEFAULT_CITIES_FILE = BASE_DIR / "html" / "cities.js"
+DEFAULT_CITIES_FILE = BASE_DIR / "us-cities.csv"
 DEFAULT_PRICES_FILE = BASE_DIR / "fuel-prices-for-be-assessment.csv"
 DEFAULT_SUPPLEMENT_FILE = BASE_DIR / "city-supplement.json"
 BATCH_SIZE = 5000
@@ -50,31 +50,31 @@ class DataFileError(Exception):
     """A data file is missing or not in the expected format."""
 
 
-def _read(path):
-    """Return a file's text, or raise DataFileError if it's missing."""
+def read_cities(path=DEFAULT_CITIES_FILE):
+    """
+    Parse us-cities.csv into dicts of City fields.
+
+    Columns: city, state, lat, lon. Names are normalized here exactly as user input will be,
+    so "St. Louis, MO" typed into the API matches the row stored for "saint louis".
+    """
+    path = Path(path)
     if not path.exists():
         raise DataFileError(f"Data file not found: {path}")
-    return path.read_text(encoding="utf-8")
 
-
-def read_cities(path=DEFAULT_CITIES_FILE):
-    """Parse cities.js into dicts of City fields (names normalized exactly like user input will be)."""
-    text = _read(Path(path))
-    marker = 'const CITIES="'
-    start = text.find(marker)
-    end = text.find('";', start)
-    if start < 0 or end < 0:
-        raise DataFileError(f"{path}: could not find the CITIES string.")
-    body = text[start + len(marker):end]
-
+    required = {"city", "state", "lat", "lon"}
     cities = []
-    for line in body.split("\\n"):  # rows are separated by a literal backslash-n
-        parts = line.split("|")
-        if len(parts) != 4:
-            continue
-        name, state, lat, lon = parts
-        cities.append({"name": normalize(name), "state": state.strip().lower(),
-                       "lat": float(lat), "lon": float(lon)})
+    with path.open(encoding="utf-8-sig", newline="") as handle:
+        reader = csv.DictReader(handle)
+        missing = required - set(reader.fieldnames or ())
+        if missing:
+            raise DataFileError(f"{path}: missing column(s) {sorted(missing)}.")
+        for row in reader:
+            try:
+                lat, lon = float(row["lat"]), float(row["lon"])
+            except (TypeError, ValueError):
+                continue
+            cities.append({"name": normalize(row["city"]), "state": row["state"].strip().lower(),
+                           "lat": lat, "lon": lon})
     return cities
 
 

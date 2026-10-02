@@ -4,9 +4,8 @@ A Django REST API that plans a road trip inside the USA and the **cheapest place
 Give it a start and a finish. It returns the route line, the map markers and every cost figure,
 ready for a web page to plot with JavaScript (a Leaflet demo page is included at `/`).
 
-This is the server-side version of the prototype in [html/index.html](html/index.html). The greedy rule is the
-same, but it runs in Django with PostgreSQL for the data and Redis for caching and rate limiting, and it is
-stricter about the physics: detours to a pump cost fuel, arrivals keep a reserve, and money is decimal.
+It runs in Django with PostgreSQL for the data and Redis for caching and rate limiting. Planning is kept
+in plain service modules, so the algorithm can be read and tested without touching HTTP.
 
 ## How it works
 
@@ -41,6 +40,16 @@ a tighter corridor claims precision the data does not have. It also improves cov
 are sparse: on Salt Lake City to Reno the longest gap between usable stations falls from 470 miles at
 a 10-mile corridor to 321 at 20, which is useful headroom against a 500-mile tank. Detours are charged
 for, so a wider corridor never makes a far-off station look free.
+
+## Data files
+
+| File | What it is |
+|---|---|
+| [fuel-prices-for-be-assessment.csv](fuel-prices-for-be-assessment.csv) | The supplied price list. The authority on which truck stops exist and what they charge. |
+| [us-cities.csv](us-cities.csv) | 29,738 US cities with coordinates. Geocodes `"City, ST"` input offline, and places each truck stop, since the price file has no coordinates. |
+| [city-supplement.json](city-supplement.json) | Coordinates and spelling aliases for the cities the price file names that `us-cities.csv` does not cover. |
+
+All three are read at load time only. Nothing here is served to a browser.
 
 ## Setup
 
@@ -102,7 +111,7 @@ Three decisions worth knowing, each visible in [planner/data_loader.py](planner/
 Only two kinds of row are skipped, and both are counted in the log: a row with no state at all, and a
 row whose price will not parse. The supplied file has neither.
 
-The price file names 91 cities that [html/cities.js](html/cities.js) does not cover, 85 of them
+The price file names 91 cities that [us-cities.csv](us-cities.csv) does not cover, 85 of them
 Canadian, which would have left those truck stops unplaceable.
 [city-supplement.json](city-supplement.json) closes the gap. Two are spelling variants of a city
 already in the table; the other 89 carry coordinates from Nominatim, each accepted only when the

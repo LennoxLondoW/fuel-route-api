@@ -1,6 +1,9 @@
 """
-Data migration: seed the City and FuelStation tables from html/cities.js and html/stations.js,
-so a fresh "manage.py migrate" gives a working API with no extra steps.
+Data migration: seed the City and FuelStation tables from the project's data files, so a fresh
+"manage.py migrate" gives a working API with no extra steps.
+
+Which files those are has changed since this migration was written. It calls the current loader,
+which today reads fuel-prices-for-be-assessment.csv and us-cities.csv.
 
 To reload the data later (e.g. new prices), use:  python manage.py load_data
 """

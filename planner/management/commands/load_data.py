@@ -30,7 +30,7 @@ class Command(BaseCommand):
         parser.add_argument("--prices", default=str(DEFAULT_PRICES_FILE),
                             help="CSV of truck stop fuel prices")
         parser.add_argument("--cities", default=str(DEFAULT_CITIES_FILE),
-                            help="cities.js, the city coordinate table")
+                            help="us-cities.csv, the city coordinate table")
         parser.add_argument("--supplement", default=str(DEFAULT_SUPPLEMENT_FILE),
                             help="JSON of city aliases and extra coordinates")
 
